@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>声笺 · 语音播报</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#">声笺 <span>VOICE NOTE</span></a>
+        <div class="status" id="status" aria-live="polite"><i></i> 准备就绪</div>
+      </header>
+
+      <section class="hero">
+        <p class="eyebrow">TEXT TO SPEECH / 01</p>
+        <h1>让每一段文字，<br /><em>被好好听见。</em></h1>
+        <p class="intro">输入你想传达的内容，选择合适的声音，即刻开始自然流畅的语音播报。</p>
+      </section>
+
+      <section class="studio" aria-label="语音播报控制台">
+        <div class="editor-panel">
+          <div class="panel-heading">
+            <label for="text-input">播报文稿</label>
+            <span id="count">0 字</span>
+          </div>
+          <textarea id="text-input" maxlength="10000" placeholder="在这里输入想要播报的文字…">欢迎使用声笺语音播报系统。输入一段文字，选择你喜欢的声音和语速，点击开始播报，即可聆听完整内容。</textarea>
+          <div class="editor-footer">
+            <button class="text-button" id="clear-btn" type="button">清空内容</button>
+            <span>支持最长 10,000 字</span>
+          </div>
+        </div>
+
+        <aside class="control-panel">
+          <div class="control-group">
+            <div class="label-row"><label for="voice-select">播报声音</label><span class="tag">系统语音</span></div>
+            <select id="voice-select" aria-label="选择播报声音"></select>
+          </div>
+
+          <div class="control-group">
+            <div class="label-row"><label for="rate">播报速度</label><output id="rate-value" for="rate">1.0×</output></div>
+            <input id="rate" type="range" min="0.5" max="2" step="0.1" value="1" />
+            <div class="range-labels"><span>舒缓</span><span>标准</span><span>快速</span></div>
+          </div>
+
+          <div class="control-group compact-control">
+            <div class="label-row"><label for="pitch">音调</label><output id="pitch-value" for="pitch">标准</output></div>
+            <input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1" />
+          </div>
+
+          <div class="action-row">
+            <button class="play-button" id="play-btn" type="button"><span class="play-icon">▶</span><span>开始播报</span></button>
+            <button class="icon-button" id="stop-btn" type="button" title="停止播报" aria-label="停止播报">■</button>
+          </div>
+          <p class="hint" id="support-hint">正在检查浏览器语音服务…</p>
+        </aside>
+      </section>
+
+      <footer>
+        <span>VOICE BROADCAST DEMO</span>
+        <span>浏览器本地语音合成 · 无需上传文本</span>
+      </footer>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>
