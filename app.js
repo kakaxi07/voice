@@ -15,7 +15,7 @@ const hint = document.querySelector('#support-hint');
 const voices = [
   { id: 'Neil', name: '阿闻', gender: 'male', detail: '专业新闻主持人' }, { id: 'Ethan', name: '晨煦', gender: 'male', detail: '阳光温暖的普通话男声' },
   { id: 'Kai', name: '凯', gender: 'male', detail: '自然舒服、松弛沉稳' }, { id: 'Eldric Sage', name: '沧明子', gender: 'male', detail: '沉稳睿智的长者' },
-  { id: 'Nofish', name: '不吃鱼', gender: 'male', detail: '亲切的设计师男声' }, { id: 'Eric', name: '程川', gender: 'male', dialect: 'sichuan', detail: '四川话，市井自然男声' }, { id: 'Cherry', name: '芊悦', gender: 'female', detail: '阳光亲切的女声' },
+  { id: 'Nofish', name: '不吃鱼', gender: 'male', detail: '亲切的设计师男声' }, { id: 'Eric', name: '程川', gender: 'male', dialect: 'sichuan', detail: '四川话，市井自然男声' }, { id: 'Sunny', name: '晴儿', gender: 'female', dialect: 'sichuan', detail: '四川话，甜美自然女声' }, { id: 'Cherry', name: '芊悦', gender: 'female', detail: '阳光亲切的女声' },
   { id: 'Serena', name: '苏瑶', gender: 'female', detail: '温柔自然的女声' }, { id: 'Maia', name: '四月', gender: 'female', detail: '知性温柔的女声' }
 ];
 let voiceFilter = 'male', socket, audioContext, scheduledUntil = 0, audioNodes = [], speaking = false, streamingDone = false;
@@ -27,7 +27,7 @@ function renderVoices() {
   const list = voiceFilter === 'all' ? voices : voiceFilter === 'sichuan' ? voices.filter(voice => voice.dialect === 'sichuan') : voices.filter(voice => voice.gender === voiceFilter);
   voiceSelect.innerHTML = '';
   list.forEach(voice => voiceSelect.add(new Option(`${voice.gender === 'male' ? '男声' : '女声'} · ${voice.name} — ${voice.detail}`, voice.id)));
-  hint.textContent = voiceFilter === 'sichuan' ? '已选择四川话 · 程川。将使用支持方言的千问实时语音模型。' : `已加载 ${list.length} 个千问${voiceFilter === 'male' ? '男' : voiceFilter === 'female' ? '女' : ''}声；默认采用自然播报指令。`;
+  hint.textContent = voiceFilter === 'sichuan' ? '已加载四川话 · 程川（男）与晴儿（女）。将使用支持方言的千问实时语音模型。' : `已加载 ${list.length} 个千问${voiceFilter === 'male' ? '男' : voiceFilter === 'female' ? '女' : ''}声；默认采用自然播报指令。`;
 }
 function pcmToBuffer(base64) {
   const binary = atob(base64), samples = new Int16Array(binary.length / 2);

@@ -8,7 +8,7 @@ const apiKey = process.env.DASHSCOPE_API_KEY;
 const upstreamBase = process.env.DASHSCOPE_REALTIME_URL || 'wss://dashscope.aliyuncs.com/api-ws/v1/realtime';
 const instructModel = 'qwen3-tts-instruct-flash-realtime';
 const dialectModel = 'qwen3-tts-flash-realtime';
-const allowedVoices = new Set(['Ethan', 'Kai', 'Neil', 'Eldric Sage', 'Nofish', 'Eric', 'Cherry', 'Serena', 'Maia', 'Mia']);
+const allowedVoices = new Set(['Ethan', 'Kai', 'Neil', 'Eldric Sage', 'Nofish', 'Eric', 'Sunny', 'Cherry', 'Serena', 'Maia', 'Mia']);
 const files = new Map([['/', 'index.html'], ['/index.html', 'index.html'], ['/styles.css', 'styles.css'], ['/app.js', 'app.js']]);
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8' };
 const id = () => `event_${crypto.randomUUID()}`;
@@ -26,7 +26,7 @@ gateway.on('connection', browser => {
     let request; try { request = JSON.parse(raw.toString()); } catch { return send(browser, { type: 'error', message: '请求格式无效。' }); }
     const text = String(request.text || '').trim();
     const voice = allowedVoices.has(request.voice) ? request.voice : 'Neil';
-    const model = voice === 'Eric' ? dialectModel : instructModel;
+    const model = ['Eric', 'Sunny'].includes(voice) ? dialectModel : instructModel;
     const rate = Math.min(2, Math.max(0.5, Number(request.rate) || 0.9));
     const pitch = Math.min(2, Math.max(0.5, Number(request.pitch) || 0.9));
     if (!apiKey) return send(browser, { type: 'error', message: '服务端尚未配置 DASHSCOPE_API_KEY。' });
