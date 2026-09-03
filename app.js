@@ -81,6 +81,7 @@ cloneForm.addEventListener('submit', async event => {
   event.preventDefault();
   const file = cloneAudio.files[0];
   if (!file || !cloneConsent.checked) return;
+  if (!/^[A-Za-z0-9_]{1,16}$/.test(cloneName.value.trim())) { cloneMessage.textContent = '名称仅限英文字母、数字和下划线，最长 16 个字符。'; return; }
   if (file.size > 8 * 1024 * 1024) { cloneMessage.textContent = '样音文件不能超过 8MB。'; return; }
   cloneMessage.textContent = '正在加密上传样音并创建专属音色…';
   const audioData = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });

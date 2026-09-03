@@ -29,7 +29,7 @@ async function createClone(req, res) {
     const { name, audioData, consent } = await readJson(req);
     if (consent !== true) return json(res, 400, { message: '请先确认已取得声音主体的明确授权。' });
     if (!apiKey) return json(res, 503, { message: '服务端尚未配置 DASHSCOPE_API_KEY。' });
-    if (!/^[\u4e00-\u9fa5a-zA-Z0-9_-]{2,24}$/.test(String(name || ''))) return json(res, 400, { message: '音色名称应为 2–24 个中文、字母、数字或连接符。' });
+    if (!/^[A-Za-z0-9_]{1,16}$/.test(String(name || ''))) return json(res, 400, { message: '音色英文标识仅限英文字母、数字和下划线，最长 16 个字符。' });
     const normalizedAudio = String(audioData || '').replace(/^data:audio\/x-m4a;base64,/, 'data:audio/mp4;base64,');
     if (!/^data:audio\/(wav|mpeg|mp4|x-m4a);base64,/.test(normalizedAudio)) return json(res, 400, { message: '仅支持 WAV、MP3 或 M4A 格式的样音。' });
     const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/audio/tts/customization', {

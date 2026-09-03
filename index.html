@@ -49,8 +49,8 @@
             <button class="preview-button" id="preview-btn" type="button">试听当前声音 <span>↗</span></button>
             <button class="clone-toggle" id="clone-toggle" type="button">+ 创建专属复刻音色</button>
             <form class="clone-panel hidden" id="clone-form">
-              <label for="clone-name">音色名称</label>
-              <input id="clone-name" maxlength="24" placeholder="例如：宣传女声" required />
+              <label for="clone-name">音色英文标识</label>
+              <input id="clone-name" maxlength="16" pattern="[A-Za-z0-9_]{1,16}" placeholder="例如：promo_female" title="仅限英文字母、数字和下划线，最多 16 个字符" required />
               <label for="clone-audio">样音文件（WAV / MP3 / M4A，建议 10–20 秒）</label>
               <input id="clone-audio" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/x-m4a,.wav,.mp3,.m4a" required />
               <label class="consent"><input id="clone-consent" type="checkbox" required /> 我确认已获得声音主体的明确授权，可将该样音上传至阿里云百炼用于声音复刻。</label>
