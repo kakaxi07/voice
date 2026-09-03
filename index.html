@@ -37,19 +37,25 @@
 
         <aside class="control-panel">
           <div class="control-group">
-            <div class="label-row"><label for="voice-select">播报声音</label><span class="tag">系统语音</span></div>
+            <div class="label-row"><label for="voice-select">播报声音</label><span class="tag">优先自然音色</span></div>
+            <div class="voice-filters" role="group" aria-label="声音类型筛选">
+              <button class="filter-button active" type="button" data-filter="male">男声优先</button>
+              <button class="filter-button" type="button" data-filter="female">女声</button>
+              <button class="filter-button" type="button" data-filter="all">全部</button>
+            </div>
             <select id="voice-select" aria-label="选择播报声音"></select>
+            <button class="preview-button" id="preview-btn" type="button">试听当前声音 <span>↗</span></button>
           </div>
 
           <div class="control-group">
             <div class="label-row"><label for="rate">播报速度</label><output id="rate-value" for="rate">1.0×</output></div>
-            <input id="rate" type="range" min="0.5" max="2" step="0.1" value="1" />
+            <input id="rate" type="range" min="0.5" max="2" step="0.1" value="0.9" />
             <div class="range-labels"><span>舒缓</span><span>标准</span><span>快速</span></div>
           </div>
 
           <div class="control-group compact-control">
             <div class="label-row"><label for="pitch">音调</label><output id="pitch-value" for="pitch">标准</output></div>
-            <input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="1" />
+            <input id="pitch" type="range" min="0.5" max="1.5" step="0.1" value="0.9" />
           </div>
 
           <div class="action-row">
@@ -57,6 +63,7 @@
             <button class="icon-button" id="stop-btn" type="button" title="停止播报" aria-label="停止播报">■</button>
           </div>
           <p class="hint" id="support-hint">正在检查浏览器语音服务…</p>
+          <p class="natural-note">演示建议：使用 Edge，并选择名称含 <b>Natural</b> 的男声，可获得更自然的停顿与语调。</p>
         </aside>
       </section>
 

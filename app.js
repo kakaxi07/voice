@@ -8,6 +8,8 @@ const pitchValue = document.querySelector('#pitch-value');
 const playButton = document.querySelector('#play-btn');
 const stopButton = document.querySelector('#stop-btn');
 const clearButton = document.querySelector('#clear-btn');
+const previewButton = document.querySelector('#preview-btn');
+const filterButtons = document.querySelectorAll('.filter-button');
 const status = document.querySelector('#status');
 const hint = document.querySelector('#support-hint');
 
@@ -17,24 +19,48 @@ let speaking = false;
 let chunks = [];
 let chunkIndex = 0;
 let stopped = false;
+let voiceFilter = 'male';
 
 function updateCount() { count.textContent = `${textInput.value.length.toLocaleString('zh-CN')} 字`; }
 function updateRate() { rateValue.textContent = `${Number(rate.value).toFixed(1)}×`; }
 function updatePitch() { pitchValue.textContent = Number(pitch.value) === 1 ? '标准' : Number(pitch.value) < 1 ? '低沉' : '明亮'; }
 function setStatus(message, active = false) { status.classList.toggle('playing', active); status.lastChild.textContent = ` ${message}`; }
 
-function loadVoices() {
-  voices = synthesis.getVoices();
+function voiceGender(voice) {
+  const name = voice.name.toLowerCase();
+  if (/(yunxi|yunyang|yunjian|yunye|kangkang|xiaobei|xiaomo|xiaogang|zhiyu|male|david|mark|guy|daniel|andrew|eric|gordon|ryan)/.test(name)) return 'male';
+  if (/(xiaoxiao|xiaoyi|xiaorui|xiaoshuang|xiaoqiu|xiaohan|xiaomeng|xiaoxuan|female|zira|hazel|aria|jenny|susan|linda)/.test(name)) return 'female';
+  return 'unknown';
+}
+
+function voiceLabel(voice) {
+  const gender = voiceGender(voice);
+  const prefix = gender === 'male' ? '男声' : gender === 'female' ? '女声' : '系统声音';
+  const natural = /natural/i.test(voice.name) ? ' · 自然音色' : '';
+  return `${prefix} · ${voice.name}${natural}`;
+}
+
+function renderVoiceOptions() {
   const chinese = voices.filter(v => /^(zh|cmn|yue)/i.test(v.lang));
-  const choices = chinese.length ? chinese : voices;
+  const source = chinese.length ? chinese : voices;
+  const filtered = voiceFilter === 'all' ? source : source.filter(v => voiceGender(v) === voiceFilter);
+  const choices = filtered.length ? filtered : source;
+  const selected = Number(voiceSelect.value);
   voiceSelect.innerHTML = '';
   if (!choices.length) { voiceSelect.innerHTML = '<option>正在加载系统声音…</option>'; return; }
-  choices.forEach((voice, index) => {
-    const option = new Option(`${voice.name} · ${voice.lang}`, voices.indexOf(voice));
-    if (index === 0) option.selected = true;
+  choices.sort((a, b) => Number(/natural/i.test(b.name)) - Number(/natural/i.test(a.name))).forEach((voice, index) => {
+    const originalIndex = voices.indexOf(voice);
+    const option = new Option(voiceLabel(voice), originalIndex);
+    if (originalIndex === selected || (index === 0 && selected < 0)) option.selected = true;
     voiceSelect.add(option);
   });
-  hint.textContent = chinese.length ? `已发现 ${chinese.length} 个中文系统声音` : `未发现中文声音，已显示全部 ${voices.length} 个系统声音`;
+  const filterName = voiceFilter === 'male' ? '中文男声' : voiceFilter === 'female' ? '中文女声' : '中文系统声音';
+  hint.textContent = filtered.length ? `已发现 ${filtered.length} 个${filterName}，已优先排列自然音色。` : `未识别到${filterName}，已显示可用的中文系统声音。`;
+}
+
+function loadVoices() {
+  voices = synthesis.getVoices();
+  renderVoiceOptions();
 }
 
 function stop() {
@@ -98,5 +124,17 @@ else { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 textInput.addEventListener('input', updateCount); rate.addEventListener('input', updateRate); pitch.addEventListener('input', updatePitch);
 playButton.addEventListener('click', speak); stopButton.addEventListener('click', stop);
 clearButton.addEventListener('click', () => { stop(); textInput.value = ''; updateCount(); textInput.focus(); });
+filterButtons.forEach(button => button.addEventListener('click', () => {
+  voiceFilter = button.dataset.filter;
+  filterButtons.forEach(item => item.classList.toggle('active', item === button));
+  renderVoiceOptions();
+}));
+previewButton.addEventListener('click', () => {
+  stop();
+  stopped = false;
+  chunks = ['您好，我是小智。很高兴为您播报今天的内容。'];
+  chunkIndex = 0;
+  speakNext();
+});
 window.addEventListener('beforeunload', () => synthesis?.cancel());
 updateCount(); updateRate(); updatePitch();
