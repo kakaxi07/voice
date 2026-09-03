@@ -42,8 +42,22 @@ async function createClone(req, res) {
     json(res, 200, { voiceId, fallback: Boolean(result.output?.fallback_mode), message: result.output?.fallback_mode ? '音色已创建，但样音质量可能影响相似度。' : '专属音色已创建，可立即用于播报。' });
   } catch (error) { json(res, 400, { message: error.message || '声音复刻请求失败。' }); }
 }
+async function listClones(res) {
+  if (!apiKey) return json(res, 503, { message: '服务端尚未配置 DASHSCOPE_API_KEY。' });
+  try {
+    const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/audio/tts/customization', {
+      method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'qwen-voice-enrollment', input: { action: 'list', page_size: 100, page_index: 0 } })
+    });
+    const result = await response.json().catch(() => ({}));
+    const voices = result.output?.voice_list || [];
+    voices.forEach(item => { if (item.voice && item.target_model === clonedVoiceModel) clonedVoices.set(item.voice, clonedVoiceModel); });
+    json(res, response.ok ? 200 : response.status, { voices: voices.filter(item => item.target_model === clonedVoiceModel).map(item => item.voice) });
+  } catch { json(res, 502, { message: '无法读取专属音色列表。' }); }
+}
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && new URL(req.url, `http://${req.headers.host}`).pathname === '/voice-clone') return createClone(req, res);
+  if (req.method === 'POST' && new URL(req.url, `http://${req.headers.host}`).pathname === '/voice-clones/list') return listClones(res);
   const file = files.get(new URL(req.url, `http://${req.headers.host}`).pathname);
   if (!file) { res.writeHead(404); return res.end('Not found'); }
   res.writeHead(200, { 'Content-Type': types[path.extname(file)], 'Cache-Control': 'no-store' });

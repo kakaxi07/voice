@@ -93,4 +93,13 @@ cloneForm.addEventListener('submit', async event => {
     cloneMessage.textContent = result.message; cloneForm.reset();
   } catch (error) { cloneMessage.textContent = `创建失败：${error.message || '请稍后重试。'}`; }
 });
-window.addEventListener('beforeunload', stop); renderVoices(); updateCount(); updateRate(); updatePitch();
+async function loadClonedVoices() {
+  try {
+    const response = await fetch('/voice-clones/list', { method: 'POST' });
+    const result = await response.json();
+    if (!response.ok) return;
+    result.voices.forEach(id => { if (!voices.some(voice => voice.id === id)) voices.push({ id, name: id, gender: 'custom', custom: true, detail: '已保存的专属复刻音色' }); });
+    if (result.voices.length) renderVoices();
+  } catch { /* 本地未启动或网络暂不可用时保留系统音色 */ }
+}
+window.addEventListener('beforeunload', stop); renderVoices(); loadClonedVoices(); updateCount(); updateRate(); updatePitch();
