@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
