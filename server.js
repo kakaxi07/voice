@@ -8,12 +8,42 @@ const apiKey = process.env.DASHSCOPE_API_KEY;
 const upstreamBase = process.env.DASHSCOPE_REALTIME_URL || 'wss://dashscope.aliyuncs.com/api-ws/v1/realtime';
 const instructModel = 'qwen3-tts-instruct-flash-realtime';
 const dialectModel = 'qwen3-tts-flash-realtime';
+const clonedVoiceModel = 'qwen3-tts-vc-realtime-2026-01-15';
 const allowedVoices = new Set(['Ethan', 'Kai', 'Neil', 'Eldric Sage', 'Nofish', 'Eric', 'Sunny', 'Cherry', 'Serena', 'Maia', 'Mia']);
+const clonedVoices = new Map();
 const files = new Map([['/', 'index.html'], ['/index.html', 'index.html'], ['/styles.css', 'styles.css'], ['/app.js', 'app.js']]);
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8' };
 const id = () => `event_${crypto.randomUUID()}`;
 const send = (socket, payload) => socket.readyState === WebSocket.OPEN && socket.send(JSON.stringify(payload));
+function json(res, status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(body)); }
+function readJson(req, limit = 12 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    let size = 0, body = '';
+    req.on('data', chunk => { size += chunk.length; if (size > limit) { reject(new Error('样音文件过大，请控制在 8MB 以内。')); req.destroy(); } else body += chunk; });
+    req.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error('请求格式无效。')); } });
+    req.on('error', reject);
+  });
+}
+async function createClone(req, res) {
+  try {
+    const { name, audioData, consent } = await readJson(req);
+    if (consent !== true) return json(res, 400, { message: '请先确认已取得声音主体的明确授权。' });
+    if (!apiKey) return json(res, 503, { message: '服务端尚未配置 DASHSCOPE_API_KEY。' });
+    if (!/^[\u4e00-\u9fa5a-zA-Z0-9_-]{2,24}$/.test(String(name || ''))) return json(res, 400, { message: '音色名称应为 2–24 个中文、字母、数字或连接符。' });
+    if (!/^data:audio\/(wav|mpeg|mp4);base64,/.test(String(audioData || ''))) return json(res, 400, { message: '仅支持 WAV、MP3 或 M4A 格式的样音。' });
+    const response = await fetch('https://dashscope.aliyuncs.com/api/v1/services/audio/tts/customization', {
+      method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'qwen-voice-enrollment', input: { action: 'create', target_model: clonedVoiceModel, preferred_name: name, audio: { data: audioData } } })
+    });
+    const result = await response.json().catch(() => ({}));
+    const voiceId = result.output?.voice;
+    if (!response.ok || !voiceId) return json(res, response.status || 502, { message: result.message || result.code || '声音复刻创建失败，请检查样音质量与模型开通状态。' });
+    clonedVoices.set(voiceId, clonedVoiceModel);
+    json(res, 200, { voiceId, fallback: Boolean(result.output?.fallback_mode), message: result.output?.fallback_mode ? '音色已创建，但样音质量可能影响相似度。' : '专属音色已创建，可立即用于播报。' });
+  } catch (error) { json(res, 400, { message: error.message || '声音复刻请求失败。' }); }
+}
 const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && new URL(req.url, `http://${req.headers.host}`).pathname === '/voice-clone') return createClone(req, res);
   const file = files.get(new URL(req.url, `http://${req.headers.host}`).pathname);
   if (!file) { res.writeHead(404); return res.end('Not found'); }
   res.writeHead(200, { 'Content-Type': types[path.extname(file)], 'Cache-Control': 'no-store' });
@@ -25,8 +55,8 @@ gateway.on('connection', browser => {
   browser.once('message', raw => {
     let request; try { request = JSON.parse(raw.toString()); } catch { return send(browser, { type: 'error', message: '请求格式无效。' }); }
     const text = String(request.text || '').trim();
-    const voice = allowedVoices.has(request.voice) ? request.voice : 'Neil';
-    const model = ['Eric', 'Sunny'].includes(voice) ? dialectModel : instructModel;
+    const voice = allowedVoices.has(request.voice) || clonedVoices.has(request.voice) ? request.voice : 'Neil';
+    const model = clonedVoices.get(voice) || (['Eric', 'Sunny'].includes(voice) ? dialectModel : instructModel);
     const rate = Math.min(2, Math.max(0.5, Number(request.rate) || 0.9));
     const pitch = Math.min(2, Math.max(0.5, Number(request.pitch) || 0.9));
     if (!apiKey) return send(browser, { type: 'error', message: '服务端尚未配置 DASHSCOPE_API_KEY。' });

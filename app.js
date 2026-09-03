@@ -9,6 +9,12 @@ const playButton = document.querySelector('#play-btn');
 const stopButton = document.querySelector('#stop-btn');
 const clearButton = document.querySelector('#clear-btn');
 const previewButton = document.querySelector('#preview-btn');
+const cloneToggle = document.querySelector('#clone-toggle');
+const cloneForm = document.querySelector('#clone-form');
+const cloneName = document.querySelector('#clone-name');
+const cloneAudio = document.querySelector('#clone-audio');
+const cloneConsent = document.querySelector('#clone-consent');
+const cloneMessage = document.querySelector('#clone-message');
 const filterButtons = document.querySelectorAll('.filter-button');
 const status = document.querySelector('#status');
 const hint = document.querySelector('#support-hint');
@@ -24,10 +30,11 @@ const updateRate = () => rateValue.textContent = `${Number(rate.value).toFixed(1
 const updatePitch = () => pitchValue.textContent = Number(pitch.value) === 1 ? '标准' : Number(pitch.value) < 1 ? '低沉' : '明亮';
 const setStatus = (message, active = false) => { status.classList.toggle('playing', active); status.lastChild.textContent = ` ${message}`; };
 function renderVoices() {
-  const list = voiceFilter === 'all' ? voices : voiceFilter === 'sichuan' ? voices.filter(voice => voice.dialect === 'sichuan') : voices.filter(voice => voice.gender === voiceFilter);
+  const list = voiceFilter === 'all' ? voices : voiceFilter === 'sichuan' ? voices.filter(voice => voice.dialect === 'sichuan') : voiceFilter === 'custom' ? voices.filter(voice => voice.custom) : voices.filter(voice => voice.gender === voiceFilter);
   voiceSelect.innerHTML = '';
-  list.forEach(voice => voiceSelect.add(new Option(`${voice.gender === 'male' ? '男声' : '女声'} · ${voice.name} — ${voice.detail}`, voice.id)));
-  hint.textContent = voiceFilter === 'sichuan' ? '已加载四川话 · 程川（男）与晴儿（女）。将使用支持方言的千问实时语音模型。' : `已加载 ${list.length} 个千问${voiceFilter === 'male' ? '男' : voiceFilter === 'female' ? '女' : ''}声；默认采用自然播报指令。`;
+  if (!list.length) voiceSelect.add(new Option('尚未创建专属音色', ''));
+  list.forEach(voice => voiceSelect.add(new Option(`${voice.custom ? '专属复刻' : voice.gender === 'male' ? '男声' : '女声'} · ${voice.name} — ${voice.detail}`, voice.id)));
+  hint.textContent = voiceFilter === 'sichuan' ? '已加载四川话 · 程川（男）与晴儿（女）。将使用支持方言的千问实时语音模型。' : voiceFilter === 'custom' ? (list.length ? '已加载你的专属复刻音色。' : '暂无专属音色。上传已授权样音即可创建。') : `已加载 ${list.length} 个千问${voiceFilter === 'male' ? '男' : voiceFilter === 'female' ? '女' : ''}声；默认采用自然播报指令。`;
 }
 function pcmToBuffer(base64) {
   const binary = atob(base64), samples = new Int16Array(binary.length / 2);
@@ -69,4 +76,21 @@ textInput.addEventListener('input', updateCount); rate.addEventListener('input',
 clearButton.addEventListener('click', () => { stop(); textInput.value = ''; updateCount(); textInput.focus(); });
 previewButton.addEventListener('click', () => { textInput.value = '您好，我是小智。现在为您演示千问实时语音播报。'; updateCount(); speak(); });
 filterButtons.forEach(button => button.addEventListener('click', () => { voiceFilter = button.dataset.filter; filterButtons.forEach(item => item.classList.toggle('active', item === button)); renderVoices(); }));
+cloneToggle.addEventListener('click', () => cloneForm.classList.toggle('hidden'));
+cloneForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const file = cloneAudio.files[0];
+  if (!file || !cloneConsent.checked) return;
+  if (file.size > 8 * 1024 * 1024) { cloneMessage.textContent = '样音文件不能超过 8MB。'; return; }
+  cloneMessage.textContent = '正在加密上传样音并创建专属音色…';
+  const audioData = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); });
+  try {
+    const response = await fetch('/voice-clone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: cloneName.value.trim(), audioData, consent: true }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message);
+    voices.push({ id: result.voiceId, name: cloneName.value.trim(), gender: 'custom', custom: true, detail: '你的专属复刻音色' });
+    voiceFilter = 'custom'; filterButtons.forEach(item => item.classList.toggle('active', item.dataset.filter === 'custom')); renderVoices();
+    cloneMessage.textContent = result.message; cloneForm.reset();
+  } catch (error) { cloneMessage.textContent = `创建失败：${error.message || '请稍后重试。'}`; }
+});
 window.addEventListener('beforeunload', stop); renderVoices(); updateCount(); updateRate(); updatePitch();
